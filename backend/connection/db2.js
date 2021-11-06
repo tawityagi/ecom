@@ -9,18 +9,18 @@ const bookSchema =new mongoose.Schema({
     version: String,
     publication: String,
     isbn: {
-        type: String, 
+        type: String,
         required: true
     },
     rating:  {
-        type: Number, 
+        type: Number,
         default: 1
     },
     category: {
         type: [String], default: []
     },
     quantity: {
-        type: Number, 
+        type: Number,
         default: 0
     },
     },

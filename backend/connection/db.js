@@ -6,7 +6,7 @@ mongoose.connect(process.env.URL , { useNewUrlParser: true,  useUnifiedTopology:
 const userSchema =new mongoose.Schema({
     name: String,
     email: {
-        type: String, 
+        type: String,
         required: true
     },
     phone: Number,
@@ -23,8 +23,8 @@ const userSchema =new mongoose.Schema({
         state: String
     },
     isAdmin: {
-        type: Boolean, 
-        required: true, 
+        type: Boolean,
+        required: true,
         default: false
     },
     wishlist: [String],

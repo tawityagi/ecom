@@ -8,6 +8,7 @@ import {
   InputBase,
   Badge,
   MenuItem,
+  TextField,
   Menu,
   Avatar,
   ListItemIcon,
@@ -37,8 +38,6 @@ import {
   CardContent
 } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import books from "../books.json";
-
 import {
   Login,
   Search,
@@ -51,13 +50,18 @@ import {
   Edit,
   AddShoppingCart,
   Save,
+  Cancel
 } from '@mui/icons-material';
 
+import { setBookCount } from "./../store/actions"
+import { connect } from 'react-redux';
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
 import { useGoogleLogin, useGoogleLogout } from 'react-google-login';
 import UpdateProfile from "./Profile";
 import { useSnackbar } from 'notistack';
+import BookDetails from "./BookDetails";
+import CartItem from "./../Cart/CartItem";
 
 const CLIENTID = "1042323156437-h0qe843489vh5lgh3g9696mucd728dqa.apps.googleusercontent.com";
 
@@ -102,14 +106,19 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const PrimarySearchAppBar = () => {
+const PrimarySearchAppBar = (props) => {
+
+  const { books } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const matchem = useMediaQuery(theme.breakpoints.up('md'));
   const matches = useMediaQuery(theme.breakpoints.up('sm'));
-
   const [drawer, setDrawer] = React.useState(false);
+  const [info, setInfo] = React.useState({email:null,age:null,phone:null});
+  const [openForm, setForm] = React.useState(false);
+  const [respon, setRespon] = React.useState(null);
+  const [create, setCreate] = React.useState(false);
   const [cart, setCart] = React.useState(null);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [user, setUser] = React.useState(null);
@@ -126,10 +135,61 @@ const PrimarySearchAppBar = () => {
     setDrawer(null);
   }
 
+  React.useEffect(() => {
+    if(user !== null && info.email!=null){
+      UserExist(info.email)
+      .then(res => res.json())
+      .then((res)=>{
+        console.log(res)
+        setInfo({email:info.email, age:res.age, phone:res.phone})
+      })
+    }
+  },[books])
+
+  const UserExist = async (user) => {
+    return await fetch("https://ecom-ducs-api.herokuapp.com/user/"+user);
+  }
+
+  const CreateUserAccount = async (email, name, age, phone) => {
+    const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, name: name, age:age, phone:phone })
+    };
+    return await fetch("https://ecom-ducs-api.herokuapp.com/user",requestOptions);
+  }
+
+  const createUser = () => {
+    CreateUserAccount(respon.profileObj.email, respon.profileObj.name, info.age, info.phone)
+    .then(res => res.json())
+    .then((res) => {
+      console.log(res);
+      setForm(false);
+      enqueueSnackbar(res.message, { variant:"success" });
+    })
+  }
+
   const responseGoogle = async (response) => {
-    console.log(response)
-    if(response.error === 'popup_closed_by_user' ){ setUser(null);enqueueSnackbar("Pop Up Closed by user!!!", { variant:"error" });}
-    else{ setUser(response);enqueueSnackbar('Login Successfull!!!', { variant:"success" });setDrawer(null);setAnchorEl(null);}
+    if(response.error === 'popup_closed_by_user' ){
+      setUser(null);
+      enqueueSnackbar("Pop Up Closed by user!!!", { variant:"error" });
+    }
+    else{
+      setInfo({email:response.profileObj.email, age:info.age, phone:info.phone})
+      UserExist(response.profileObj.email)
+      .then(res => res.json())
+      .then((res) => {
+        // console.log(res);
+        if(res.message){
+          setForm(true);
+          setRespon(response);
+        }else{
+          setInfo({email:res.email,age:res.age,phone:res.phone,name:res.name}) //res.phone[0]
+        }
+        setUser(response);
+      })
+      setDrawer(null);setAnchorEl(null);
+    }
   }
 
   const { signIn } = useGoogleLogin({
@@ -144,7 +204,7 @@ const PrimarySearchAppBar = () => {
     onFailure : (res) => console.log(res),
     clientId : CLIENTID,
     cookiePolicy : 'single_host_origin',
-    onLogoutSuccess : (res) => {setUser(null);enqueueSnackbar('LogOut Successfull!!!', { variant:"success" });setDrawer(null);setAnchorEl(null);}
+    onLogoutSuccess : (res) => {setUser(null);setDrawer(null);setAnchorEl(null);}
   })
 
   const handleSignIn = (event) => {
@@ -249,48 +309,8 @@ const PrimarySearchAppBar = () => {
   });
 
   const data = books.slice(0,10).map((value, key)=>{
-    console.log(value);
     return(
-      <Grid item id={key} xs={3}>
-        <Grow
-          in={true}
-          style={{ transformOrigin: '0 0 0' }}
-          {...(true? { timeout: 1000 } : {})}
-          >
-          <Card sx={{ maxWidth: 250 , fontFamily: 'McLaren, cursive'}}>
-            <CardMedia
-              component="img"
-              alt={value.title}
-              sx={{height:160}}
-              image={value.thumbnailUrl}
-            />
-            <CardContent>
-              <Typography style={{fontFamily: 'McLaren, cursive'}} gutterBottom variant="h6">
-                {value.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Grid container justifyContent="space-between" style={{fontFamily: 'McLaren, cursive'}} alignItems="center">
-                <Grid item>
-                  {value.authors.map((value,key)=>{
-                    return(
-                      <Typography style={{fontFamily: 'McLaren, cursive'}}>
-                        {value}
-                      </Typography>
-                    )
-                  })}
-                </Grid>
-                <Grid item>
-                  <IconButton size="small"><AddShoppingCart/></IconButton>
-                </Grid>
-              </Grid>
-            </CardActions>
-          </Card>
-        </Grow>
-      </Grid>
+      <BookDetails key={key} value={value} matchem={matchem} matches={matches} carts={cart} setCart={setCart}/>
     )
   })
 
@@ -313,7 +333,7 @@ const PrimarySearchAppBar = () => {
             component="div"
             sx={{ display: { xs: 'none', sm: 'block' }, fontFamily: 'McLaren, cursive'}}
             >
-            e-Commerce Project
+            Book Smith - Donate Books & Earn Rewards
           </Typography>
           <Box sx={{flexGrow:1}}/>
           <SearchI>
@@ -346,36 +366,73 @@ const PrimarySearchAppBar = () => {
             {renderItem}
           </Popover></div>}
         </Toolbar>
+        {user!==null?<UpdateProfile user={user} info={info} UserExist={UserExist} openUpdateProf={openUpdateProf} setUpdateProf={setUpdateProf}/>:""}
         <Dialog
-          open={openUpdateProf}
-          onClose={()=>setUpdateProf(false)}
+          open={openForm}
+          onClose={()=>{setForm(false);signOut();}}
           scroll={'body'}
           >
           <DialogTitle id="scroll-dialog-title" sx={{fontFamily: 'McLaren, cursive',}}>
-            <Grid container justifyContent="space-between" alignItems={"center"}>
-              <Grid item>Update Profile</Grid>
-              <Grid item>
-                <IconButton onClick={()=>setUpdateProf(false)}>
-                  <Close/>
-                </IconButton>
-              </Grid>
+            <Grid container justifyContent="center" alignItems={"center"}>
+              <Grid item>Create User Account</Grid>
             </Grid>
           </DialogTitle>
-          <DialogContent dividers={true}>
+          <DialogContent>
             <DialogContentText
               id="scroll-dialog-description"
               tabIndex={-1}
+              sx={{fontFamily: 'McLaren, cursive'}}
               >
-              <UpdateProfile user={user}/>
+              <Grid container justifyContent="center" alignItems="center" direction="row" spacing={1}>
+                <Grid item xs={12}>
+                  <Box display="flex" alignItems="center" justifyContent="center">
+                    <Avatar alt={user!==null?user.profileObj.name:""} src={user!==null?user.profileObj.imageUrl:""}/>
+                  </Box>
+                  <Box display="flex" alignItems="center" justifyContent="center" sx={{paddingTop:1}}>
+                    {user!==null?user.profileObj.name:""}
+                  </Box>
+                  <Box display="flex" alignItems="center" justifyContent="center" sx={{paddingTop:1}}>
+                    {user!==null?user.profileObj.email:""}
+                  </Box>
+                </Grid>
+                <Grid item>
+                  <Box sx={{paddingTop:2}}>
+                    <TextField
+                      label="Age"
+                      id="outlined-size-small"
+                      defaultValue={info.age}
+                      size="small"
+                      onChange ={(e)=>{setInfo({email:null, phone:info.phone, age : e.target.value})}}
+                      inputProps={{style: {fontFamily: 'McLaren, cursive'}}}
+                      InputLabelProps={{style: {fontFamily: 'McLaren, cursive'}} }
+                    />
+                  </Box>
+                </Grid>
+                <Grid item>
+                  <Box sx={{paddingTop:2}}>
+                    <TextField
+                      label="Mobile Number"
+                      id="outlined-size-small"
+                      size="small"
+                      inputProps={{style: {fontFamily: 'McLaren, cursive'}}}
+                      InputLabelProps={{style: {fontFamily: 'McLaren, cursive'}} }
+                      defaultValue={info.mobile}
+                      onChange ={(e)=>{setInfo({email:null, phone : e.target.value, age:info.age})}}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button startIcon={<Save />} style={{paddingRight: 14 }} onClick={()=>setUpdateProf(false)}>
-              <Typography sx={{fontFamily: 'McLaren, cursive',textTransform:"none"}}>Save</Typography>
+            <Button startIcon={<Edit />} style={{paddingRight: 14 }} onClick={()=>{createUser()}}>
+              <Typography sx={{fontFamily: 'McLaren, cursive',textTransform:"none"}}>Create Account</Typography>
+            </Button>
+            <Button startIcon={<Cancel />} style={{paddingRight: 14 }} onClick={()=>{setForm(false); setCreate(false); signOut();}}>
+              <Typography sx={{fontFamily: 'McLaren, cursive',textTransform:"none"}}>Cancel</Typography>
             </Button>
           </DialogActions>
         </Dialog>
-
         <Dialog
           open={openProf}
           onClose={()=>setProf(false)}
@@ -402,9 +459,8 @@ const PrimarySearchAppBar = () => {
                 {user!==null?user.profileObj.email:""}
               </Box>
               <Grid container justifyContent="flex-left" sx={{paddingTop:1}} spacing={1}>
-                <Grid item xs={6}>Age : N.A. </Grid>
-                <Grid item xs={6}>Mobile : N.A.</Grid>
-                <Grid item xs={12}>Address : N.A.</Grid>
+                <Grid item xs={6}>Age : {info.age} </Grid>
+                <Grid item xs={6}>Mobile : {info.phone}</Grid>
               </Grid>
             </DialogContentText>
           </DialogContent>
@@ -415,10 +471,9 @@ const PrimarySearchAppBar = () => {
           </DialogActions>
         </Dialog>
       </AppBar>
-
       {renderMenu}
-      <Box sx={{flexGrow:1, position:"absolute",padding:5}}>
-        <Grid container direction={"row"} alignItems="center" justifyContent="center">
+      <Box sx={{flexGrow:1, position:"absolute",padding:5, paddingTop:2}}>
+        <Grid container direction={"row"} alignItems="flex-start" spacing={1} justifyContent="flex-start">
           {data}
         </Grid>
       </Box>
@@ -426,15 +481,17 @@ const PrimarySearchAppBar = () => {
         anchor="bottom"
         open={cart}
         onClose={()=>{setCart(false)}}
+        ModalProps={{
+          keepMounted: true,
+        }}
         >
         <div
           tabIndex={0}
           role="button"
           onClick={()=>{setCart(false)}}
-          onKeyDown={()=>{setCart(false)}}
           >
           <Box sx={{ display: 'flex' }}>
-             {data}
+             <CartItem setCart={setCart}/>
           </Box>
         </div>
       </Drawer>
@@ -448,4 +505,17 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-export default PrimarySearchAppBar;
+function mapDispatchToProps(dispatch) {
+  return {
+
+  };
+}
+
+const mapStateToProps = state => {
+  return { books: state.books };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(PrimarySearchAppBar);
