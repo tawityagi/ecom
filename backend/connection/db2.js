@@ -5,26 +5,32 @@ mongoose.connect(process.env.URL , { useNewUrlParser: true,  useUnifiedTopology:
 
 const bookSchema =new mongoose.Schema({
     title: String,
-    author: String,
     version: String,
     publication: String,
+    pageCount : Number,
+    thumbnailUrl: String,
+    shortDescription: String,
+    longDescription: {
+        type:String,
+        default: "NA"
+    },
+    status: String,
+    authors : {
+        type: [String], default: []
+    },
     isbn: {
-        type: String,
+        type: String, 
         required: true
     },
     rating:  {
-        type: Number,
-        default: 1
-    },
-    category: {
-        type: [String], default: []
-    },
-    quantity: {
-        type: Number,
+        type: Number, 
         default: 0
     },
+    category: {
+        type: [String], default: ["Miscellaneous"]
     },
-    {timestamps: true}
+},
+{timestamps: true}
 )
 
 bookSchema.index({title: 'text'});

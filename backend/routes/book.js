@@ -17,13 +17,18 @@ router.get("/", (req,res,next) => {
 router.post("/", (req,res,next) => {
     const newBook = new Book({
         title: req.body.title,
-        author: req.body.author,
         version: req.body.version,
         publication: req.body.publication,
         isbn: req.body.isbn,
         rating: req.body.rating,
         category: req.body.category,
-        quantity: req.body.quantity
+        quantity: req.body.quantity,
+        pageCount : req.body.pageCount,
+        thumbnailUrl: req.body.thumbnailUrl,
+        shortDescription: req.body.shortDescription,
+        longDescription: req.body.longDescription,
+        status: req.body.status,
+        authors : req.body.authors
     });
     
     Book.findOne(
