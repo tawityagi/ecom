@@ -28,7 +28,8 @@ router.post("/", (req,res,next) => {
         shortDescription: req.body.shortDescription,
         longDescription: req.body.longDescription,
         status: req.body.status,
-        authors : req.body.authors
+        authors : req.body.authors,
+        publishedAt : req.body.publishedAt
     });
     
     Book.findOne(

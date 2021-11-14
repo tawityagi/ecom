@@ -29,6 +29,10 @@ const bookSchema =new mongoose.Schema({
     category: {
         type: [String], default: ["Miscellaneous"]
     },
+    publishedAt : {
+        type : Date,
+        default: "1998-06-01"
+    },
 },
 {timestamps: true}
 )
