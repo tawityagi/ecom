@@ -2,6 +2,7 @@ import React from 'react';
 import {
   AppBar,
   Box,
+  CircularProgress,
   Toolbar,
   IconButton,
   Typography,
@@ -52,8 +53,9 @@ import {
   Save,
   Cancel
 } from '@mui/icons-material';
+import ReactLoading from 'react-loading';
 
-import { setBookCount } from "./../store/actions"
+import { setBooks, setBookCount, setInfo, setLogin } from "./../store/actions"
 import { connect } from 'react-redux';
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
@@ -108,14 +110,16 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 const PrimarySearchAppBar = (props) => {
 
-  const { books } = props;
+  const { loading, setLoading, books, info, setBooks, setInfo, isLogin, setLogin } = props;
   const classes = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
+  // const [books, setBooks] = React.useState([]);
+  // console.log(books)
   const matchem = useMediaQuery(theme.breakpoints.up('md'));
   const matches = useMediaQuery(theme.breakpoints.up('sm'));
   const [drawer, setDrawer] = React.useState(false);
-  const [info, setInfo] = React.useState({email:null,age:null,phone:null});
+  const [value, setSearchValue] = React.useState(null);
   const [openForm, setForm] = React.useState(false);
   const [respon, setRespon] = React.useState(null);
   const [create, setCreate] = React.useState(false);
@@ -136,15 +140,46 @@ const PrimarySearchAppBar = (props) => {
   }
 
   React.useEffect(() => {
-    if(user !== null && info.email!=null){
+    // setLoading(true);
+    if(user !== null && info.email!=null && isLogin){
       UserExist(info.email)
       .then(res => res.json())
       .then((res)=>{
         console.log(res)
+        // setUser({email:info.email, age:res.age, phone:res.phone})
         setInfo({email:info.email, age:res.age, phone:res.phone})
+        setLogin(true);
       })
     }
   },[books])
+
+  const searchData = () => {
+    setLoading(true);
+    if(value !== null){
+      fetch("https://ecom-ducs-api.herokuapp.com/book/search/related/"+value)
+      .then((res)=>res.json())
+      .then((res)=>{
+        setBooks(res);
+        setLoading(false);
+      });
+    }
+    if(value === ""){
+      fetch("https://ecom-ducs-api.herokuapp.com/book")
+      .then((res)=>res.json())
+      .then((res)=>{
+        console.log(res);
+        setBooks(res);
+        setLoading(false);
+      })
+    }
+  }
+
+  React.useEffect(() => {
+    setLoading(true);
+    searchData();
+    // console.log(value)
+  },[value])
+
 
   const UserExist = async (user) => {
     return await fetch("https://ecom-ducs-api.herokuapp.com/user/"+user);
@@ -165,13 +200,17 @@ const PrimarySearchAppBar = (props) => {
     .then((res) => {
       console.log(res);
       setForm(false);
+      setLogin(true);
       enqueueSnackbar(res.message, { variant:"success" });
+    }).catch((err)=>{
+      setLogin(false);
     })
   }
 
   const responseGoogle = async (response) => {
     if(response.error === 'popup_closed_by_user' ){
       setUser(null);
+      setLogin(false);
       enqueueSnackbar("Pop Up Closed by user!!!", { variant:"error" });
     }
     else{
@@ -186,7 +225,10 @@ const PrimarySearchAppBar = (props) => {
         }else{
           setInfo({email:res.email,age:res.age,phone:res.phone,name:res.name}) //res.phone[0]
         }
+        setLogin(true);
         setUser(response);
+      }).catch((err)=>{
+        setLogin(false);
       })
       setDrawer(null);setAnchorEl(null);
     }
@@ -204,7 +246,7 @@ const PrimarySearchAppBar = (props) => {
     onFailure : (res) => console.log(res),
     clientId : CLIENTID,
     cookiePolicy : 'single_host_origin',
-    onLogoutSuccess : (res) => {setUser(null);setDrawer(null);setAnchorEl(null);}
+    onLogoutSuccess : (res) => {setUser(null);setDrawer(null);setAnchorEl(null);setLogin(false)}
   })
 
   const handleSignIn = (event) => {
@@ -308,7 +350,7 @@ const PrimarySearchAppBar = (props) => {
     return <Slide direction="up" ref={ref} {...props} />;
   });
 
-  const data = books.slice(0,10).map((value, key)=>{
+  const data = books.map((value, key)=>{
     return(
       <BookDetails key={key} value={value} matchem={matchem} matches={matches} carts={cart} setCart={setCart}/>
     )
@@ -316,17 +358,9 @@ const PrimarySearchAppBar = (props) => {
 
   return (
     <Box sx={{ flexGrow: 1}}>
-      <AppBar position="static" sx={{backgroundColor : "#993399", paddingRight:0, paddingLeft:matches?0:2 }}>
+      <AppBar position="static" sx={{backgroundColor : "#334756", paddingRight:0, paddingLeft:matches?0:2 }}>
         <Toolbar sx={{ margin: 0, padding: 0 }}>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            xs={{ mr: 0 }}
-            >
-            <ShoppingCart/>
-          </IconButton>
+          <img alt="logo" src="./../bookshelf.png" style={{ width: "28px", height: "28px", paddingRight:"8px" }}/>
           <Typography
             variant="h6"
             noWrap
@@ -344,6 +378,11 @@ const PrimarySearchAppBar = (props) => {
               placeholder="Looking for books ?"
               inputProps={{ 'aria-label': 'search'}}
               sx={{fontFamily: 'McLaren, cursive'}}
+              onChange={(e)=>{setSearchValue(e.target.value)}}
+              onKeyDown={(e) => {
+                if(e.key === "Enter"){
+                  searchData()}
+                }}
             />
           </SearchI>
           {matchem?renderItem:<div><Tooltip title="Expand"><IconButton color="inherit" onClick={(event)=>{setDrawer(event.currentTarget)}}>
@@ -472,9 +511,29 @@ const PrimarySearchAppBar = (props) => {
         </Dialog>
       </AppBar>
       {renderMenu}
-      <Box sx={{flexGrow:1, position:"absolute",padding:5, paddingTop:2}}>
-        <Grid container direction={"row"} alignItems="flex-start" spacing={1} justifyContent="flex-start">
-          {data}
+      <Box sx={{flexGrow:1,padding:5, paddingTop:2}}>
+      <Grid container alignItems={"center"} spacing={1} justifyContent={"center"}>
+        {
+          !loading?
+          Array.isArray(books) && books.length === 0?
+          <Grid item>
+            <Typography noWrap style={{fontFamily: 'McLaren, cursive',color:"#334756", fontSize:18, textAlign:"center", fontWeight:"bold"}} gutterBottom variant="h6">
+              *** Book Not Found ***
+            </Typography>
+          </Grid>
+          :<div/>:
+          <Grid item>
+            <ReactLoading type={"bars"} color={"#334756"} height={matchem?100:50} width={matchem?80:50} />
+          </Grid>
+        }
+        </Grid>
+        <Grid container direction={"row"} alignItems={matches?"flex-start":"center"} spacing={1} justifyContent={matches?"flex-start":"center"} >
+          {
+            !loading && Array.isArray(books) && books.length !== 0?
+            data
+            :
+            <div/>
+          }
         </Grid>
       </Box>
       <Drawer
@@ -507,12 +566,15 @@ const useStyles = makeStyles(theme => ({
 
 function mapDispatchToProps(dispatch) {
   return {
-
+    setInfo : info => dispatch(setInfo(info)),
+    setBooks: books => dispatch(setBooks(books)),
+    setLogin: isLogin => dispatch(setLogin(isLogin))
   };
 }
 
 const mapStateToProps = state => {
-  return { books: state.books };
+  // console.log(state);
+  return { books: state.books, info : state.info, isLogin : state.isLogin };
 };
 
 export default connect(

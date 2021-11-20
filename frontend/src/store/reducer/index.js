@@ -1,5 +1,5 @@
 import { initialState } from "./../initialState";
-import { ADDBOOKTOTEMPCART, SETBOOKS, PLUSMINUSBOOK, ADDBOOKTOCART, DELETEBOOKFROMCART } from "./../actions/constants";
+import { SETLOGIN, SETINFO, ADDBOOKTOTEMPCART, SETBOOKS, PLUSMINUSBOOK, ADDBOOKTOCART, DELETEBOOKFROMCART } from "./../actions/constants";
 
 const updatedData = ( cart, data ) => {
   let newState = []
@@ -40,12 +40,22 @@ const checkExist = (state, index) => {
 const rootReducer = (state = initialState, action) => {
   // console.log(state)
   switch(action.type){
+    case SETLOGIN:{
+      return Object.assign({},state,{
+        books:state.books,
+        tempCart:state.tempCart,
+        cart:state.cart,
+        info:state.info,
+        isLogin:action.isLogin
+      })
+      break;
+    }
     case SETBOOKS:{
       return Object.assign({},state,{
         books:action.books,
         tempCart:state.tempCart,
         cart:state.cart,
-        user:state.user,
+        info:state.info,
         isLogin:state.isLogin
       })
       break;
@@ -55,7 +65,7 @@ const rootReducer = (state = initialState, action) => {
         books:state.books,
         tempCart: { book : action.book.book, count : action.book.count},
         cart:state.cart,
-        user:state.user,
+        info:state.info,
         isLogin:state.isLogin
       })
       break;
@@ -65,7 +75,7 @@ const rootReducer = (state = initialState, action) => {
         books:state.books,
         tempCart:{ book : state.tempCart.book, count:action.count},
         cart:state.cart,
-        user:state.user,
+        info:state.info,
         isLogin:state.isLogin
       })
       break;
@@ -76,7 +86,7 @@ const rootReducer = (state = initialState, action) => {
         books:state.books,
         tempCart:{ book : state.tempCart.book, count:state.tempCart.count},
         cart:add ? updatedData(state, action.book) : state.cart.concat(action.book),
-        user:state.user,
+        info:state.info,
         isLogin:state.isLogin
       });
       break;
@@ -87,7 +97,17 @@ const rootReducer = (state = initialState, action) => {
         books:state.books,
         tempCart:{ book : state.tempCart.book, count:state.tempCart.count},
         cart:add ? removeData(state, action.book) : state.cart.concat(action.book),
-        user:state.user,
+        info:state.info,
+        isLogin:state.isLogin
+      });
+      break;
+    }
+    case SETINFO:{
+      return Object.assign({}, state, {
+        books:state.books,
+        tempCart:{ book : state.tempCart.book, count:state.tempCart.count},
+        cart:state.cart,
+        info:action.info,
         isLogin:state.isLogin
       });
       break;
