@@ -27,7 +27,7 @@ app.use('/book', book);
 app.use('/admin',admin);
 
 app.listen(port, (req,res) => {
-        console.log("Server is running ....");
-    })
+   console.log("Server is running ....");
+})
 
 module.exports.handler = serverless(app);
