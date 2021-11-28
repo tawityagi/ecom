@@ -74,7 +74,7 @@ router.get("/email", (req,res,next) => {
 router.put("/:email", (req,res,next) =>  {
     User.findOneAndUpdate(
         {email: req.params.email,isAdmin:true}, 
-        {name: req.body.name}, 
+        {phone: req.body.phone}, 
         (err) => {
             if(err){
                 return res.send(err);

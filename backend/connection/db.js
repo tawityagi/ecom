@@ -1,12 +1,12 @@
 require("dotenv").config()
 const mongoose =require("mongoose")
 
-mongoose.connect(process.env.URL , { useNewUrlParser: true,  useUnifiedTopology:true});
+mongoose.connect(process.env.URL  , { useNewUrlParser: true,  useUnifiedTopology:true});
 
 const userSchema =new mongoose.Schema({
     name: String,
     email: {
-        type: String,
+        type: String, 
         required: true
     },
     phone: Number,
@@ -23,12 +23,22 @@ const userSchema =new mongoose.Schema({
         state: String
     },
     isAdmin: {
-        type: Boolean,
-        required: true,
+        type: Boolean, 
+        required: true, 
         default: false
     },
-    wishlist: [String],
-    orders: [String]
+    wishlist: {
+        type:[String],
+        default: []
+    },
+    cart: [{
+        isbn: String,
+        count: Number
+    }],
+    orders:  {
+        type:[String],
+        default: []
+    },
 })
 
 const User= mongoose.model("User",userSchema);

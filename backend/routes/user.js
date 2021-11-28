@@ -71,7 +71,7 @@ router.get("/:email", (req,res,next) => {
 router.put("/:email", (req,res,next) =>  {
     User.findOneAndUpdate(
         {email: req.params.email}, 
-        {name: req.body.name}, 
+        {phone: req.body.phone}, 
         (err) => {
             if(err){
                 return res.send(err);
@@ -118,4 +118,118 @@ router.delete("/:email", (req,res,next) =>  {
     })
 });
 
+//Add to cart option
+router.put("/:email/addBook/cart", (req,res,next) =>  {
+    if(req.body.count == '0' || req.body.count == 0){
+        User.updateOne(
+            {email: req.params.email}, 
+            { $pull: { cart :{isbn: req.body.isbn} } },
+            (err) => {
+                if(err){
+                    return res.send(err);
+                } else{
+                    return res.send({ message: "Count was zero, Successfully removed from cart" } );
+                }
+            }
+        );
+    }else{
+    User.findOne(
+        {email: req.params.email}, 
+        (err,foundUser) => {
+            if(foundUser){
+                res.statusCode = 200;
+                var cartArr = foundUser.cart;
+                var hasMatch =false;
+
+                for (var index = 0; index < cartArr.length; ++index) {
+
+                    var value = cartArr[index];
+
+                    if(value.isbn == req.body.isbn){
+                        hasMatch = true;
+                        // console.log("Item found in cart");
+                        
+                        User.findOneAndUpdate(
+                            {email: req.params.email},
+                            {$set: {"cart.$[e1].count" : req.body.count } },
+                            { 
+                                arrayFilters: [
+                                    {"e1._id" : value._id}
+                                ],
+                            }, 
+                            (err,found) => {
+                                if(found){
+                                    return res.send({ message: "Successfully added to cart" } );
+                                } else{
+                                    return res.send({ message: "isbn not found !" } );
+                                }
+                        });
+                        break;
+                    }
+                }
+                if(hasMatch == false){
+                    // console.log("Not Found");
+                    User.findOneAndUpdate(
+                        {email: req.params.email}, 
+                        { $addToSet: { cart: req.body } }, 
+                        (err) => {
+                            if(err){
+                                return res.send(err);
+                            } else{
+                                return res.send({ message: "Successfully added to cart" } );
+                            }
+                        }
+                    );
+                }
+            } else{
+                return res.send({ message: "No User found!" } );
+            }
+    });
+}
+})
+
+router.put("/:email/removeBook/cart", (req,res,next) =>  {
+    User.updateOne(
+        {email: req.params.email}, 
+        { $pull: { cart :{isbn: req.body.isbn} } },
+        (err) => {
+            if(err){
+                return res.send(err);
+            } else{
+                res.statusCode = 200;
+                return res.send({ message: "Successfully removed from cart" } );
+            }
+        }
+    );
+})
+
+//Add to wishlist
+router.put("/:email/addBook/wishlist", (req,res,next) =>  {
+    User.findOneAndUpdate(
+        {email: req.params.email}, 
+        { $addToSet: { wishlist: req.body.isbn } }, 
+        (err) => {
+            if(err){
+                return res.send(err);
+            } else{
+                res.statusCode = 200;
+                return res.send({ message: "Successfully added to wishlist" } );
+            }
+        }
+    );
+})
+router.put("/:email/removeBook/wishlist", (req,res,next) =>  {
+    User.findOneAndUpdate(
+        {email: req.params.email}, 
+        { $pull: { wishlist: req.body.isbn } }, 
+        (err) => {
+            if(err){
+                return res.send(err);
+            } else{
+                res.statusCode = 200;
+                return res.send({ message: "Successfully removed from wishlist" } );
+            }
+        }
+    );
+})
 module.exports = router;
