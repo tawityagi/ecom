@@ -1,4 +1,5 @@
-# ecom
-eCommerce Project DUCS
+# Book Smith - Donate Books & Earn Rewards
 
-[Demo](https://ecommmerce-ducs.netlify.app/)
+E-Commerce Project DUCS
+
+Click for 👉 [Demo](https://ecommmerce-ducs.netlify.app/)
