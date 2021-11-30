@@ -208,12 +208,15 @@ router.put("/:email/addBook/wishlist", (req,res,next) =>  {
     User.findOneAndUpdate(
         {email: req.params.email}, 
         { $addToSet: { wishlist: req.body.isbn } }, 
-        (err) => {
+        (err,foundUser) => {
             if(err){
                 return res.send(err);
-            } else{
+            } if(foundUser){
                 res.statusCode = 200;
                 return res.send({ message: "Successfully added to wishlist" } );
+            } else{
+                res.statusCode = 401;
+                return res.send({ message: "User not found" } );
             }
         }
     );
@@ -222,12 +225,15 @@ router.put("/:email/removeBook/wishlist", (req,res,next) =>  {
     User.findOneAndUpdate(
         {email: req.params.email}, 
         { $pull: { wishlist: req.body.isbn } }, 
-        (err) => {
+        (err,foundUser) => {
             if(err){
                 return res.send(err);
-            } else{
+            } if(foundUser) {
                 res.statusCode = 200;
                 return res.send({ message: "Successfully removed from wishlist" } );
+            } else{
+                res.statusCode = 401;
+                return res.send({ message: "User not found" } );
             }
         }
     );
